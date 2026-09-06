@@ -1,0 +1,81 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" width="1200" height="800" role="img" aria-label="Certificate of Achievement — The LLM Course — Varun B P, Hugging Face Instructors, 2026-07-06">
+  <!-- Static copy of the certificate rendered in src/components/certs/CertificateArt.jsx (keep in sync). -->
+  <defs>
+    <linearGradient id="hf-asset-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f3f4b8"/>
+      <stop offset="55%" stop-color="#e4eeb6"/>
+      <stop offset="100%" stop-color="#c6e7bd"/>
+    </linearGradient>
+    <radialGradient id="hf-asset-seal" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#fffdf5"/>
+      <stop offset="100%" stop-color="#e8eef0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Paper -->
+  <rect width="1200" height="800" rx="14" fill="url(#hf-asset-bg)"/>
+
+  <!-- Outer golden frame -->
+  <rect x="22" y="22" width="1156" height="756" rx="8" fill="none" stroke="#c9a227" stroke-width="6"/>
+  <!-- Inner golden frame -->
+  <rect x="38" y="38" width="1124" height="724" rx="6" fill="none" stroke="#c9a227" stroke-width="2.5"/>
+
+  <!-- Corner flourishes -->
+  <path d="M 46 66 C 76 50 96 50 122 46 C 118 72 118 92 102 122" fill="none" stroke="#c9a227" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 1154 66 C 1124 50 1104 50 1078 46 C 1082 72 1082 92 1098 122" fill="none" stroke="#c9a227" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 46 734 C 76 750 96 750 122 754 C 118 728 118 708 102 678" fill="none" stroke="#c9a227" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 1154 734 C 1124 750 1104 750 1078 754 C 1082 728 1082 708 1098 678" fill="none" stroke="#c9a227" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Header -->
+  <text x="600" y="212" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="bold" fill="#1f3d2b">Certificate of Achievement</text>
+  <text x="600" y="272" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="36" fill="#2e5b16" letter-spacing="1">The LLM Course</text>
+  <rect x="400" y="292" width="400" height="2.5" fill="#c9a227" opacity="0.7"/>
+
+  <text x="600" y="356" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="19" fill="#1f3d2b" letter-spacing="7">THIS IS TO CERTIFY THAT</text>
+
+  <!-- Recipient -->
+  <text x="600" y="462" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="78" font-weight="bold" fill="#1f3d2b">Varun B P</text>
+  <line x1="370" y1="492" x2="830" y2="492" stroke="#1f3d2b" stroke-width="1.6"/>
+  <line x1="368" y1="482" x2="368" y2="502" stroke="#1f3d2b" stroke-width="2.4"/>
+  <line x1="832" y1="482" x2="832" y2="502" stroke="#1f3d2b" stroke-width="2.4"/>
+
+  <!-- Statement -->
+  <text x="600" y="556" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="25" fill="#1f3d2b">Has successfully completed</text>
+  <text x="600" y="608" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="31" font-weight="bold" fill="#2e5b16">1. Fundamentals of LLMs</text>
+  <text x="600" y="652" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="22" fill="#1f3d2b">of <tspan font-weight="bold">The LLM Course</tspan></text>
+
+  <!-- Footer: seal (left), emoji medallion (center), date (right) -->
+  <g transform="translate(230, 700)">
+    <circle cx="0" cy="0" r="52" fill="#3a3f44"/>
+    <circle cx="0" cy="0" r="46" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <circle cx="41" cy="0" r="1.7" fill="#fff"/>
+    <circle cx="35.5" cy="20.5" r="1.7" fill="#fff"/>
+    <circle cx="20.5" cy="35.5" r="1.7" fill="#fff"/>
+    <circle cx="0" cy="41" r="1.7" fill="#fff"/>
+    <circle cx="-20.5" cy="35.5" r="1.7" fill="#fff"/>
+    <circle cx="-35.5" cy="20.5" r="1.7" fill="#fff"/>
+    <circle cx="-41" cy="0" r="1.7" fill="#fff"/>
+    <circle cx="-35.5" cy="-20.5" r="1.7" fill="#fff"/>
+    <circle cx="-20.5" cy="-35.5" r="1.7" fill="#fff"/>
+    <circle cx="0" cy="-41" r="1.7" fill="#fff"/>
+    <circle cx="20.5" cy="-35.5" r="1.7" fill="#fff"/>
+    <circle cx="35.5" cy="-20.5" r="1.7" fill="#fff"/>
+    <circle cx="0" cy="0" r="34" fill="url(#hf-asset-seal)"/>
+    <circle cx="0" cy="0" r="34" fill="none" stroke="#3a3f44" stroke-width="1"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2e5b16">The LLM</text>
+    <text x="0" y="10" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2e5b16">Course</text>
+  </g>
+  <text x="230" y="776" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="19" font-weight="bold" fill="#1f3d2b">Hugging Face</text>
+  <text x="230" y="794" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="17" fill="#1f3d2b">Instructors</text>
+
+  <!-- Center medallion -->
+  <circle cx="600" cy="700" r="46" fill="#f2c94c"/>
+  <circle cx="600" cy="700" r="46" fill="none" stroke="#fff" stroke-width="6"/>
+  <circle cx="600" cy="700" r="40" fill="none" stroke="#c9a227" stroke-width="2"/>
+  <text x="600" y="716" text-anchor="middle" font-size="40">🤗</text>
+
+  <!-- Date -->
+  <line x1="884" y1="690" x2="1040" y2="690" stroke="#1f3d2b" stroke-width="1.6"/>
+  <text x="962" y="682" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="24" font-weight="bold" fill="#1f3d2b">2026-07-06</text>
+  <text x="962" y="776" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="18" fill="#1f3d2b">Date</text>
+</svg>
