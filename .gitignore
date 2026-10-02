@@ -2,3 +2,12 @@
 node_modules
 package-lock.json
 dist
+
+.env
+.env.local
+.env.*.local
+
+# Unrelated project that was sitting inside this repo — keep it out of the
+# portfolio builds and deploys. Best long-term fix: move the folder out of
+# the repo entirely.
+Open-Higgsfield-AI/

@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Varun B P — Portfolio design system
+   Ink #0C0C0C base · Kanit typography · light blue-gray text.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0c0c0c;
+  color: #e8edf2;
+  font-family: 'Kanit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 300;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(187, 204, 215, 0.28);
+  color: #fff;
+}
+
+/* Keep anchored sections clear of the fixed navigation bar. */
+section[id],
+footer[id] {
+  scroll-margin-top: 96px;
+}
+
+/* ---------------- Typography helpers ---------------- */
+
+.text-gradient-hero {
+  background: linear-gradient(180deg, #646973 0%, #bbccd7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.text-gradient-soft {
+  background: linear-gradient(180deg, #ffffff 0%, #9aa6b2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.label-xs {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #7d8794;
+}
+
+/* ---------------- Surfaces ---------------- */
+
+.surface {
+  background-color: #0f0f0f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.surface-hover {
+  transition:
+    border-color 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1),
+    background-color 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.surface-hover:hover {
+  border-color: rgba(187, 204, 215, 0.28);
+}
+
+/* Subtle film grain / vignette used behind hero + sections */
+.ink-vignette {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(187, 204, 215, 0.09) 0%, transparent 60%),
+    radial-gradient(90% 60% at 50% 110%, rgba(120, 150, 175, 0.05) 0%, transparent 65%);
+}
+
+/* ---------------- Motion-safe helpers ---------------- */
+
+@keyframes marquee-shift-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes soft-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(3deg);
+  }
+}
+
+.animate-soft-float {
+  animation: soft-float 9s ease-in-out infinite;
+}
+
+@keyframes orbit-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-orbit-slow {
+  animation: orbit-slow 34s linear infinite;
+}
+
+.text-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-shift-left 42s linear infinite;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Horizontal rows that should read as scrollable on touch devices */
+.snap-row {
+  scroll-snap-type: x mandatory;
+}
+
+.snap-row > * {
+  scroll-snap-align: start;
+}
+
+/* ---------------- Accessibility ---------------- */
+
+:focus-visible {
+  outline: 2px solid #bbccd7;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  background: #bbccd7;
+  color: #0c0c0c;
+  font-weight: 600;
+  transition: top 0.2s ease-out;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ---------------- Scrollbar ---------------- */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0c0c0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(187, 204, 215, 0.22);
+  border-radius: 9999px;
+  border: 2px solid #0c0c0c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(187, 204, 215, 0.4);
+}
+
+/* ---------------- Reduced motion ----------------
+   Content is never hidden — only decorative motion stops. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-soft-float,
+  .animate-orbit-slow,
+  .text-marquee {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

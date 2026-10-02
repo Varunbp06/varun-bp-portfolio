@@ -1,170 +1,141 @@
 # Varun B P — Portfolio · Agent Guide
 
 Context for any future coding agent (or human) working on this portfolio.
-Keep this file updated when architecture or conventions change.
+Keep this file updated when architecture, data or conventions change.
 
 ## Project at a glance
 
-- **Stack:** Vite + React 18 (JSX) + Tailwind CSS 3 + Framer Motion + Three.js (React Three Fiber / drei).
-- **Entry:** `src/main.jsx` → `src/App.jsx` (Header, FloatingThemeToggle, Home with preloader).
-- **Single page, anchor sections:** `#home` (hero) → `#about` → `#projects` → `#skills` → `#education` → `#contact`.
-- **Content lives in one file:** `src/data.js` (profile, stats, skills, sTierProjects, aTierProjects, education, certifications, languages, typewriterRoles).
+- **Production URL:** <https://varunbp-portfolio.vercel.app/> (Vercel project
+  `varunbp-portfolio`, linked via `.vercel/project.json`). The URL must not
+  change — deploys go through this same project.
+- **Stack:** Vite 5 + React 18 + **TypeScript** + Tailwind CSS 3 +
+  Framer Motion. No WebGL / Three.js: the 3D feel is built from CSS depth,
+  sticky stacking, transforms and motion (deliberate, for performance).
+- **Entry:** `index.html` → `src/main.tsx` → `src/App.tsx`.
+- **One page, anchored sections, in this order:** `#home` (hero) → marquee →
+  `#about` → `#capabilities` → `#projects` → `#skills` → `#education` →
+  `#certifications` → `#achievements` → `#contact` → footer.
 
-## Source-of-truth rule
+## Source-of-truth rule (unchanged, and important)
 
-All personal content (name, title, projects, descriptions, links, education,
-certifications, contact) comes from **the E-drive resume** (`E:\Varun_B_P_Resume.pdf`,
-copied byte-for-byte to `public/Varun BP Engg Resume.pdf`). Never invent facts, links,
-repos, or credentials. When adding a claim, it must be traceable to the E-drive resume or
-to a verified live URL/repo owned by Varun (`github.com/Varunbp06`, Vercel deploys).
+All personal content — name, positioning, projects, links, education,
+certifications, achievements, contact — is real and traceable to one of:
+
+1. `public/Varun BP Engg Resume.pdf` (the E-drive resume, copied byte-for-byte),
+2. Varun's own repositories / live deployments (`github.com/Varunbp06`,
+   `*.vercel.app` builds owned by him),
+3. the previous portfolio source (`Varunbp06/varun-portfolio`,
+   `src/data/portfolioData.js`) for the earlier full-stack projects,
+   education detail, certifications and achievements.
+
+**Never invent** a metric, client, employer, credential, project, screenshot,
+repository or URL. Every external link in `src/data/` was HTTP-verified; if you
+add one, verify it (`curl -sIL`) first. Projects without a public repo must keep
+their `repoNote` instead of a link.
 
 ## Commands
 
 ```bash
-npm run dev       # dev server (localhost:5173)
-npm run build     # production build -> dist/
-npm run preview   # serve dist locally (default :4173)
-node audit-ui.mjs # headless-Chrome UI audit (requires `npm run preview -- --port 4175` running)
+npm run dev         # dev server (localhost:5173)
+npm run typecheck   # tsc --noEmit (strict, noUnusedLocals/Parameters)
+npm run build       # production build -> dist/
+npm run preview     # serve dist (use --port 4175 for the QA script)
+node qa-check.mjs   # headless-Chrome QA against http://127.0.0.1:4175/
+                    # start preview as:
+                    #   npm run preview -- --port 4175 --strictPort --host 127.0.0.1
+                    # (without --host, Vite may bind IPv6-only and QA sees an empty page)
 ```
 
-The audit (`audit-ui.mjs`) opens the site at `http://127.0.0.1:4175/`, clicks nav,
-switches the Projects/Certifications tabs, opens modals, and asserts: all 5 nav
-anchors work, the 15 credential cards render (5 earned + 4 resume-verified
-completed + 6 honest "available to earn" programs), filters work, certificate vs open-program modals
-show status-appropriate content (real cert modal shows recipient/date/course +
-download controls; open-program modal shows a Verify/Open CTA to the issuer),
-the navbar hides behind modals, Escape closes modals, the flagship spotlight is
-present, and the console is free of errors. Run it after any change that
-touches those flows. (Note: `a[download]`/programmatic downloads
-are canceled inside headless Chrome — verify the PNG-export path by code review,
-not by watching files land.)
+`qa-check.mjs` drives real Chrome over CDP and asserts: the nine sections
+exist, no broken in-page anchors, one `<h1>` with the real name, safe external
+links, the resume file resolves, the portrait loads, three sticky project cards
+with the real GitHub repos, three live demo links, the marquee media budget,
+⌘K palette + Escape, nav scrolling, mobile menu open/Escape, no horizontal
+overflow or clipped UI at 360/390/430/640/768/1024/1280/1440/1920, reduced-motion
+content parity, and a clean console. Run it before reporting any UI change done.
 
-## Architecture notes
+## Architecture
 
-- **Navbar hiding is a stack, not a boolean.** `NavbarContext` keeps a
-  `hideCount`; modals call `hideNavbar()` on mount and `showNavbar()` on unmount
-  (balanced), and `hideNavbar`/`showNavbar` are `useCallback`-memoized. Never
-  change it to a plain boolean — two open modals would fight and re-show the
-  navbar over the other (a past bug).
-- **Header hit-testing:** the fixed header wrapper is `pointer-events-none`, so
-  the `<header>` element itself MUST carry `pointer-events-auto` — without it,
-  desktop nav links silently ignore real mouse/touch clicks (synthetic
-  `el.click()` in CDP still fires, which masks the bug; always verify nav with
-  real `Input.dispatchMouseEvent` clicks).
-- **Modals are portalled + measured.** `CertificateModal` and
-  `ProjectDetailModal` render via `createPortal(..., document.body)` — never
-  rely on nested fixed positioning (an ancestor transform/filter/backdrop
-  silently re-anchors `fixed` overlays and crops content). The earned
-  certificate uses `EarnedDoc`: it reads the SVG viewBox ratio, measures the
-  real viewport space below the viewer, and sizes the sheet in pixels so the
-  whole document is visible on open (zoom controls grow it with native pan).
-- **Tiers:** `sTierProjects` = top 3 production platforms (Aurelia AI is
-  `flagship: true` and featured in the flagship spotlight banner + S-tier row +
-  detail modal). Each S-tier entry carries a `flow[]` pipeline rendered by
-  `FlowStrip` in the flagship spotlight and the detail modal — steps must be
-  traceable to the project description, never invented metrics. `aTierProjects`
-  = college builds; do not invent repos/links for
-  them — modals already state "repo not yet made public".
-- **Certifications:** `src/components/certs/CertificatesGallery.jsx` renders two
-  visually separate sections: "My credentials" (5 earned + 4 completed dossier
-  cards in a 1/2/3-col grid) and "Recommended to earn" (6 open programs as
-  dashed, non-document `RecommendRow` list rows — never confusable with real
-  credentials). Three visually distinct states — gold-framed EARNED (real HF cert, cyan COMPLETED (labelled
-  representation, "CERTIFICATE IMAGE UNAVAILABLE · RESUME-VERIFIED", evidence
-  button → resume PDF), slate AVAILABLE ("PREVIEW — NOT EARNED"). `kind:
-  'certificate'` renders the real Hugging Face cert (`HuggingFaceCertificateSvg`
-  in `CertificateArt.jsx`, issued 2026-07-06) whose gradient ids are
-  `useId`-namespaced (safe when card + modal are mounted together). Each
-  `kind: 'certificate'` entry also has `asset` pointing at its standalone copy
-  in `public/certificates/` — keep that static SVG in sync with
-  `CertificateArt.jsx`. `downloadSvgNodeAsPng()` rasterizes the live SVG to a
-  hi-res PNG client-side (with raw-SVG fallback). `kind: 'credential'` entries
-  render the premium `CredentialCover` concept preview (document frame + corner
-  ticks, provider badge, title, topics, level, solid state band — never a fake
-  issued document) and link to the issuer's official course page (`verifyUrl`
-  for completed, `learnUrl` for open) — do not re-issue or fabricate
-  third-party documents. Every entry carries `topics[]` plus verified program
-  facts (`credentialType/cost/certIssued/requirements`, researched Sep 2026)
-  shown in the modal facts table, and a truthful credibility checklist built by
-  `credibilityFor()` — only true attributes, never scores. Each dossier card has
-  a valid-HTML action footer (Details / Open-or-Verify / File-download-when-earned)
-  outside the preview button, with 44px targets; card text never clips
-  (wrapping + min-heights, verified by a CDP clip audit). Filters are
-  status + subject (`credentialFilters`: All/Earned/Completed/Available +
-  4 categories) via `STATUS_FILTERS`. Cards add a cursor spotlight
-  (`--spot-x/--spot-y`, hidden under reduced motion) on top of `TiltCard` tilt,
-  hover document elevation, and sheen sweep.
-- **GitHub asset audit (conclusive):** a recursive tree scan of Varun's repos
-  (`Varunbp06/aurelia-ai`, `nexamind-ai`, `aurevia-health-ai`) found NO
-  certificate files — the only certificate asset in existence is the in-hand
-  Hugging Face cert replica at `public/certificates/`. So the "completed"
-  credentials (DeepLearning.AI, Databricks, Microsoft, IBM) must stay as
-  resume-verified links, never re-issued documents, and the "open" programs
-  stay clearly labelled previews. Do not repeat this scan expecting new assets
-  unless Varun uploads files.
-- **Per-cert E2E:** `node cert-e2e.mjs` clicks all 12 cards individually and asserts
-  each modal opens with matching title + working CTAs and closes on Escape,
-  then asserts all 8 filters render exact counts (All 15 / Earned 5 /
-  Completed 4 / Available 6 / LLM & Gen AI 9 / AI & ML 3 / Cloud & Data 2 /
-  Cybersecurity 1) — plus desktop/mobile overflow, mobile modal, keyboard
-  Enter, and zero console errors; Escape is listened on `window` (not `document`) inside
-  the modal — when testing via CDP, dispatch key events on `window` and use
-  real `Input.dispatchKeyEvent` sequences (rawKeyDown → char → keyUp) for
-  Enter/Space button activation, since synthetic `dispatchEvent` on a `<button>`
-  does not fire `onClick`.
-- **3D scenes:** `src/components/three/` holds the gated scenes (HeroOrbit,
-  AboutCore, SkillsCore). Add any new scene behind `SceneGate` + `React.lazy`
-  exactly like the existing ones; the Skills heading area hosts `SkillsCore`.
-  HeroOrbit includes a pointer-parallax `Rig` plus `Satellites` (data-node
-  spheres on faint orbit paths) — keep node counts low and reuse the same
-  gated/pause contract.
-- **Skills tracer:** the Skills grid in `Home.jsx` renders each skill as a
-  toggle button (`aria-pressed`); selecting one highlights every group that
-  contains it and dims the rest. Skill names come from `src/data.js` only —
-  never add proficiency scores or skills not in the data.
-- **IDs & landmarks:** each page id (`#home #about #projects #skills #education
-  #contact`) appears exactly once in the DOM — nested section wrappers must NOT
-  re-declare ids (`<Contact/>` and `ProjectSection` omit `id`; their parents in
-  `Home.jsx` own the anchors). One `<h1>` per page; header brand is a `<span>`.
-  The Projects/Certifications/Tech-Stack switcher is `role="tablist"` with
-  `aria-selected` tabs + labelled tabpanels.
-- **3D / animation:**
-  - WebGL scenes (`src/components/three/`) are lazy-loaded behind `SceneGate`
-    and only run on desktop (≥1024px), with capped pixel ratio, pause when
-    offscreen, and reduced-motion support — preserve this anti-lag contract when
-    adding scenes.
-  - `SceneGate` exports `useSceneEnabled()` (same gate logic). Layout that is
-    purely decorative (e.g. the About 3D column) must reserve space via
-    `useSceneEnabled()` — render the column only when on and let text span full
-    width otherwise, so mobile/tablet/reduced-motion never shows dead space.
-  - `TiltCard` provides pointer-based CSS 3D tilt (fine-pointer + no reduced
-    motion only, rAF-throttled, no WebGL).
-  - Keyframes `float-y` / `rotate360` live in `src/index.css`.
-## Reusable agent capabilities (with fallbacks)
+```
+src/
+  App.tsx                 section composition, ⌘K shortcut, MotionConfig
+  main.tsx                React root
+  styles/index.css        design tokens, #0C0C0C base, Kanit, reduced-motion
+  data/                   typed content (types.ts + one module per domain)
+  lib/                    cn(), motion variants, hooks (active section, media query…)
+  components/
+    layout/               Navbar, Footer, ProgressBar, ScrollToTop, CommandPalette
+    ui/                   FadeIn, Magnet, AnimatedText, Marquee, ContactButton,
+                          ProjectButton, SectionHeading, SocialIcon
+    sections/             Hero, About, Capabilities, Projects (+ProjectVisual),
+                          Skills, Education, Certifications, Achievements, Contact
+```
 
-For future portfolio tasks prefer, in order:
+Content is **never** hardcoded in a component — components render from
+`src/data/*` typed by `src/data/types.ts`. If a data shape changes, update
+`types.ts` and every consumer in the same change.
 
-1. **Content editing** — edit `src/data.js` only; components render from it.
-   If data shape changes, update every consumer (ProjectSection, CertificatesGallery,
-   Home) in the same change.
-2. **Verification** — verify every external URL with `curl -sIL` before wiring
-   it in; `target="_blank"` links must carry `rel="noopener noreferrer"`.
-3. **Design/UX polish** — keep the dark `#060010` + cyan `#00ffdc` accent system;
-   use existing Tailwind tokens/`index.css` keyframes; run `npm run build` and a
-   headless-Chrome check (console errors, rendered anchors, click-through of
-   tabs/modals/nav) before reporting done.
-4. **Deep research / trending work** — only if the user asks for research: use
-   web search + GitHub API checks (stars/license/activity) and never copy
-   third-party project claims into Varun's own project entries.
-5. **Skipped tooling** — Browser-Use, Agent Memory MCP, scientific/cyber skill
-   bundles, RTX/plugin tooling, etc., are NOT embedded in this repo. If a future
-   task lists them, treat them as optional external agent tooling: enable only
-   what is genuinely usable in the current environment, and otherwise fall back
-   to the built-in verification + design conventions above.
+## Design system
 
-## Security reminders
+- Base `#0C0C0C`, text light blue-gray (`#bbccd7` family), Kanit 300–900.
+- `.text-gradient-hero` = `linear-gradient(180deg,#646973,#BBCCD7)` clipped to
+  text — used for the hero name and section-level display type.
+- `.label-xs` = uppercase micro label; `.surface` / `.surface-hover` = card
+  shell; `.ink-vignette` = ambient depth wash.
+- `ContactButton` implements the specified gradient pill (magenta → violet →
+  amber, inset glow, white 2px outline, wide-tracked uppercase).
+- Tiles/media are 420×270 at `lg`, scaling down below that; never introduce
+  fixed heights that break the aspect ratio.
 
-- No API keys / secrets may ever live in frontend code or `data.js`. If one is
-  found (e.g., in this workspace's `nemetron/nemotron.py` — a real `nvapi-…`
-  key), flag it, never commit it, and recommend revocation.
-- Escape all user content rendered via JSX; keep `dangerouslySetInnerHTML` out.
+## Performance contracts (do not regress)
+
+- **No scroll position or cursor position in React state.** Scroll-driven
+  effects use `useScroll` motion values, refs, and one rAF-coalesced passive
+  listener. `ProgressBar`, `Magnet`, `AnimatedText` and `Marquee` all follow
+  this rule.
+- **Marquee:** the supplied motion GIFs are multi-megabyte files. `Marquee`
+  keeps the exact two-row visual but mounts an `<img>` only for tiles inside
+  the viewport window, only while the section is near the viewport, and only
+  up to `MARQUEE_MAX_MOUNTED` / `MARQUEE_LOAD_BUDGET` (see `src/data/marquee.ts`).
+  Everything else renders an identically sized branded tile. It also skips all
+  media on `saveData` / slow connections and stops moving under reduced motion.
+  Do not "simplify" this back to rendering every GIF.
+- **Sticky project stack:** sticky positioning only from `lg` and only when the
+  visitor has not requested reduced motion (`useMediaQuery` + `useMediaQuery`
+  gate in `Projects.tsx`). Mobile is normal flow, never blocked by sticky math.
+- Transform/opacity only; avoid animating `width`, `height`, `top`, `left`.
+- One animation library (Framer Motion). Do not add GSAP/AOS/another scroll lib.
+
+## Accessibility & overlays
+
+- `MotionConfig reducedMotion="user"` in `App.tsx` neutralises transform
+  animations for reduced-motion visitors; CSS additionally stops the marquee,
+  float and orbit keyframes. Content is never hidden.
+- Every overlay (mobile menu, command palette, project modal, credential modal)
+  is portalled to `document.body`, closes on Escape, locks body scroll via
+  `useBodyScrollLock`, autofocuses its close control, and returns focus to the
+  previously focused element.
+- Anchor targets rely on `scroll-margin-top` (see `index.css`) plus
+  `scrollToSection()` — do not reintroduce brittle manual scroll offsets.
+- Interactive targets must be ≥24px tall (QA flags smaller ones).
+
+## Security
+
+- No secrets in source. `VITE_WEB3FORMS_KEY` and `RESEND_API_KEY` come from the
+  environment (see `.env.example`); `.env*` files are git-ignored.
+- Contact form order: **Web3Forms** (the delivery method the earlier site
+  used, active whenever `VITE_WEB3FORMS_KEY` is set) → `/api/contact` (Vercel
+  function + Resend) → an inline error that names the email address. The form
+  must never open the visitor's mail client on submit, and must never silently
+  drop a message. A 200 that is not a real `{ ok: true }` / `{ success: true }`
+  JSON body must never count as delivered.
+- Keep the `botcheck` honeypot field (Web3Forms' own field name), the
+  email-format validation, and `rel="noopener noreferrer"` on every external
+  `target="_blank"` link.
+
+## Deployment
+
+`main` on `github.com/Varunbp06/varun-bp-portfolio` auto-deploys to the existing
+Vercel project — same URL, no new project. Build command `npm run build`, output
+`dist`, and `api/contact.js` as a serverless function. Do not add a
+`vercel.json` rewrite that breaks the SPA fallback or the API route.

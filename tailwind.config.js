@@ -1,31 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,jsx}'],
-  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      colors: {
+        ink: {
+          DEFAULT: '#0C0C0C',
+          soft: '#111111',
+          card: '#0F0F0F',
+        },
+        mist: {
+          DEFAULT: '#BBCCD7',
+          dim: '#646973',
+        },
+      },
       fontFamily: {
-        display: ['Space Grotesk', 'Poppins', 'sans-serif'],
-        body: ['Inter', 'Poppins', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'Cascadia Code', 'monospace'],
+        sans: ['Kanit', 'system-ui', 'sans-serif'],
+        display: ['Kanit', 'system-ui', 'sans-serif'],
       },
-      animation: {
-        gradient: 'gradient 8s linear infinite',
-        'spin-slow': 'spin 12s linear infinite',
-        blink: 'blink 1s step-end infinite',
+      screens: {
+        '3xl': '1920px',
       },
-      keyframes: {
-        gradient: {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' },
-        },
-        blink: {
-          '0%, 100%': { opacity: 1 },
-          '50%': { opacity: 0 },
-        },
+      transitionTimingFunction: {
+        editorial: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
     },
   },
   plugins: [],
-}
+};
