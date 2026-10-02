@@ -16,6 +16,13 @@ import { cn } from '../../lib/utils';
 
 const GAP = 12; // gap-3
 
+/**
+ * Fraction of one set width the rows travel while the reel crosses the
+ * viewport. The previous scroll-linked factor produced well under one tile of
+ * drift across the whole pass, which read as a static reel.
+ */
+const TRAVEL_RATIO = 4;
+
 interface RowHandle {
   measure: () => void;
   apply: (offset: number) => void;
@@ -59,12 +66,14 @@ const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
         if (!first) return;
         strideRef.current = first.getBoundingClientRect().width + GAP;
       },
-      apply(offset: number) {
+      /** `travel` is a signed pixel distance already scaled for visibility. */
+      apply(travel: number) {
         const track = trackRef.current;
         const stride = strideRef.current || 432;
         if (!track) return;
         const setWidth = stride * tiles.length;
-        const shifted = dir === 1 ? -(setWidth - wrap(offset, setWidth)) : -wrap(offset, setWidth);
+        // Wrap into one set width so the two copies hand off seamlessly.
+        const shifted = -wrap(dir === 1 ? -travel : travel, setWidth);
         track.style.transform = `translate3d(${shifted.toFixed(2)}px,0,0)`;
 
         if (staticMode) return;
@@ -97,11 +106,9 @@ const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
 
   return (
     <div className="relative w-full overflow-hidden">
-      <div
-        ref={trackRef}
-        className="flex w-max gap-3 will-change-transform"
-        style={{ transform: 'translate3d(0,0,0)' }}
-      >
+      {/* The track transform is written imperatively by `apply()`; no React
+          style prop here so there is exactly one owner of `transform`. */}
+      <div ref={trackRef} className="flex w-max gap-3 will-change-transform">
         {Array.from({ length: tiles2 }, (_, index) => {
           const source = index % tiles.length;
           const src = tiles[source];
@@ -204,10 +211,17 @@ export default function Marquee() {
     if (!near) return;
     let frame = 0;
     let sectionTop = 0;
+    let sectionHeight = 0;
 
     const measure = () => {
       const section = sectionRef.current;
-      sectionTop = section ? section.offsetTop : 0;
+      if (section) {
+        const rect = section.getBoundingClientRect();
+        // Absolute document position — never assume 0, and never cache a stale
+        // value across a resize or a layout shift above the reel.
+        sectionTop = rect.top + window.scrollY;
+        sectionHeight = rect.height;
+      }
       rowRefs.current.forEach((row) => row.current?.measure());
       paint();
     };
@@ -215,8 +229,22 @@ export default function Marquee() {
     const paint = () => {
       frame = 0;
       if (staticMode) return;
-      const offset = (window.scrollY - sectionTop + window.innerHeight) * 0.3;
-      rowRefs.current.forEach((row) => row.current?.apply(offset));
+
+      const viewport = window.innerHeight;
+      // How far the reel has travelled through the viewport, 0 → 1.
+      // Normalising against the reel's own scroll span keeps the motion
+      // clearly visible no matter where the section sits in the document,
+      // instead of collapsing to a few pixels of drift.
+      const span = sectionHeight + viewport;
+      const progress = span > 0 ? (window.scrollY - sectionTop + viewport) / span : 0;
+
+      // `TRAVEL_RATIO` × one set width ≈ 4 tiles of travel across the whole
+      // pass — unmistakable on screen while still wrapping seamlessly.
+      const travel = progress * TRAVEL_RATIO * sectionHeight;
+
+      // `apply()` owns the direction via each row's `dir` prop — pass the
+      // unsigned distance so the two rows travel in opposite directions.
+      rowRefs.current.forEach((row) => row.current?.apply(travel));
     };
 
     const onScroll = () => {
@@ -226,9 +254,12 @@ export default function Marquee() {
     measure();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', measure);
+    // Images/fonts finishing can shift layout; re-measure once settled.
+    const settle = window.setTimeout(measure, 400);
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', measure);
+      window.clearTimeout(settle);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [near, staticMode]);

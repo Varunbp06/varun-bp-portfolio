@@ -50,11 +50,12 @@ export const marqueeRows: MarqueeRow[] = [
  *
  * Kept deliberately small: every live tile decodes a multi-megabyte animated
  * GIF, so a handful on screen at once is already the difference between a
- * smooth page and a janky one. The composition is unchanged — the remaining
- * tiles render as identically sized branded placeholders.
+ * smooth page and a janky one. Both are split evenly across the two rows, so
+ * each row gets 3 — enough that the reel always shows real previews on screen,
+ * still far below the cost of animating all 21 at once.
  */
-export const MARQUEE_MAX_MOUNTED = 4;
-export const MARQUEE_LOAD_BUDGET = 5;
+export const MARQUEE_MAX_MOUNTED = 6;
+export const MARQUEE_LOAD_BUDGET = 6;
 
 /** Readable label rendered on each tile (and used as its placeholder text). */
 export const marqueeLabel = (src: string): string =>
