@@ -71,11 +71,16 @@ export default function Hero() {
             {firstNameLine}
           </motion.p>
 
+          {/* The name is ~4.32em wide and the two-column layout leaves it
+              ~0.51 vw per unit, so at 11vw the two met within a pixel between
+              1040px and 1160px and the trailing "P" dropped onto a line of its
+              own. 10vw clears the column with margin, and nowrap makes a single
+              line a guarantee rather than a coincidence. */}
           <motion.h1
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-            className="text-gradient-hero text-[clamp(3rem,11vw,9.5rem)] font-extrabold leading-[0.86] tracking-[-0.03em]"
+            className="text-gradient-hero whitespace-nowrap text-[clamp(3rem,10vw,9.5rem)] font-extrabold leading-[0.86] tracking-[-0.03em]"
           >
             {profile.name}
           </motion.h1>
