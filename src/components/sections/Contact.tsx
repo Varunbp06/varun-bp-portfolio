@@ -33,6 +33,17 @@ export default function Contact() {
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  /**
+   * Direct email fallback. Carries whatever the visitor already typed so a
+   * failed send never costs them their message. Always targets the same inbox
+   * the server route uses.
+   */
+  const mailtoHref = `mailto:${profile.email}?subject=${encodeURIComponent(
+    `Portfolio Contact — ${form.name.trim() || 'Website visitor'}`,
+  )}&body=${encodeURIComponent(
+    `${form.message.trim()}\n\n— ${form.name.trim()}${form.email.trim() ? ` (${form.email.trim()})` : ''}`,
+  )}`;
+
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(profile.email);
@@ -204,13 +215,21 @@ export default function Contact() {
               </div>
 
               {status ? (
-                <p
+                <div
                   role="status"
                   aria-live="polite"
                   className={`text-sm ${status.type === 'success' ? 'text-emerald-300' : 'text-rose-300'}`}
                 >
-                  {status.text}
-                </p>
+                  <p>{status.text}</p>
+                  {status.type === 'error' ? (
+                    <a
+                      href={mailtoHref}
+                      className="mt-1 inline-flex items-center gap-2 py-1.5 text-xs uppercase tracking-[0.14em] text-white/70 underline underline-offset-4 transition-colors hover:text-white"
+                    >
+                      <Icon name="mail" /> Email me directly
+                    </a>
+                  ) : null}
+                </div>
               ) : null}
 
               <div className="flex flex-wrap items-center gap-4">
