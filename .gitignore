@@ -11,3 +11,6 @@ dist
 # portfolio builds and deploys. Best long-term fix: move the folder out of
 # the repo entirely.
 Open-Higgsfield-AI/
+
+# Local-only audit tooling and scan output (metadata only, no secret values).
+.audit/
