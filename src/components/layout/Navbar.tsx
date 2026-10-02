@@ -44,13 +44,30 @@ export default function Navbar({ onOpenPalette }: NavbarProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE }}
           className={cn(
-            'pointer-events-auto mx-auto flex max-w-[1600px] items-center justify-between gap-4',
-            'px-4 py-4 transition-all duration-500 ease-editorial sm:px-6 lg:px-10',
-            scrolled
-              ? 'border-b border-white/10 bg-[#0C0C0C]/92 py-3'
-              : 'border-b border-transparent',
+            // `isolate` keeps the -z-10 glass layer inside this element's
+            // stacking context, so it can never slip behind the page.
+            'pointer-events-auto relative isolate mx-auto flex max-w-[1600px] items-center justify-between gap-4',
+            // Padding is constant across both states so the bar never changes
+            // height and the page beneath never shifts.
+            'px-4 py-4 sm:px-6 lg:px-10',
           )}
         >
+          {/* Glass surface. Only opacity animates: the backdrop blur is always
+              applied, so it can never pop in mid-transition, and nothing is
+              painted while the bar is transparent at the top of the page. */}
+          <div
+            aria-hidden="true"
+            className={cn(
+              'pointer-events-none absolute inset-0 -z-10 border-b transition-opacity duration-300 ease-out motion-reduce:transition-none',
+              scrolled ? 'border-white/[0.08] opacity-100' : 'border-transparent opacity-0',
+            )}
+            style={{
+              backgroundColor: 'rgba(10, 12, 16, 0.7)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+            }}
+          />
+
           <a
             href="#top"
             onClick={(event) => {
