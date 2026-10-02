@@ -1,0 +1,18 @@
+# Files Vercel must not upload. Everything needed for the build (src/, public/,
+# api/, index.html, package.json, package-lock.json, *config.js, tsconfig.json)
+# stays included.
+node_modules
+dist
+.vercel
+.git
+
+# Secrets never leave the machine.
+.env
+.env.local
+.env.*.local
+
+# Unrelated project that happens to sit inside this repo.
+Open-Higgsfield-AI
+
+# Local tooling / docs not needed at build time.
+qa-check.mjs
