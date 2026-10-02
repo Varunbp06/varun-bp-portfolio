@@ -126,5 +126,5 @@ export interface Language {
 
 export interface MarqueeRow {
   id: string;
-  tiles: string[];
+  tiles: import('./marquee').MarqueeItem[];
 }

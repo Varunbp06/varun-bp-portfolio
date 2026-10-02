@@ -1,69 +1,75 @@
 import type { MarqueeRow } from './types';
 
-const A = 'https://motionsites.ai/assets/';
-
 /**
- * Marquee media, exactly as supplied by the design specification.
+ * Marquee media, same-origin and self-hosted.
  *
- * Engineering note: these preview GIFs are multi-megabyte animated files
- * (measured 5–15 MB each). Decoding two rows of 21 of them, or even tripling
- * the sets, would wreck first-load and scroll performance — so `Marquee`
- * mounts them through two hard budgets below and renders an identically sized
- * branded tile for everything else. The visual composition is unchanged; the
- * network cost is bounded.
+ * The design supplied 21 remote GIFs on motionsites.ai. They were a liability
+ * for production in two ways: multi-megabyte animated files decoded in
+ * parallel, and one asset (`celestia`) that now 404s upstream entirely — which
+ * is what left dark cards on screen.
+ *
+ * Every preview is therefore transcoded at build-prep time into two layers:
+ *
+ *   /marquee/<slug>/poster.webp   ~25 KB  first frame, rendered immediately
+ *   /marquee/<slug>/preview.webm  ~200 KB VP9 animation, played only while the
+ *                                       tile is actually on screen
+ *
+ * Total weight dropped from 169 MB of GIFs to 5.4 MB, all 21 have a real
+ * poster, and a failed or skipped animation can never produce a blank card.
  */
-const sources: string[] = [
-  'hero-space-voyage-preview-eECLH3Yc.gif',
-  'hero-codenest-preview-Cgppc2qV.gif',
-  'hero-vex-ventures-preview-BczMFIiw.gif',
-  'hero-stellar-ai-v2-preview-DjvxjG3C.gif',
-  'hero-asme-preview-B_nGDnTP.gif',
-  'hero-transform-data-preview-Cx5OU29N.gif',
-  'hero-vitara-preview-Cjz2QYyU.gif',
-  'hero-terra-preview-BFjrCr7T.gif',
-  'hero-skyelite-preview-DHaZIgUv.gif',
-  'hero-aethera-preview-DknSlcTa.gif',
-  'hero-designpro-preview-D8c5_een.gif',
-  'hero-stellar-ai-preview-D3HL6bw1.gif',
-  'hero-xportfolio-preview-D4A8maiC.gif',
-  'hero-orbit-web3-preview-BXt4OttD.gif',
-  'hero-nexora-preview-cx5HmUgo.gif',
-  'hero-evr-ventures-preview-DZxeVFEX.gif',
-  'hero-planet-orbit-preview-DWAP8Z1P.gif',
-  'hero-new-era-preview-CocuDUm9.gif',
-  'hero-wealth-preview-B70idl_u.gif',
-  'hero-luminex-preview-CxOP7ce6.gif',
-  'hero-celestia-preview-0yO3jXO8.gif',
-].map((file) => `${A}${file}`);
+export interface MarqueeItem {
+  slug: string;
+  label: string;
+  poster: string;
+  animation: string;
+  width: number;
+  height: number;
+}
 
-/** Two rows: first 11 sources scroll one way, the remaining 10 the other. */
+const items: Array<[slug: string, label: string, width: number, height: number]> = [
+  ['space-voyage', 'Space Voyage', 800, 588],
+  ['codenest', 'CodeNest', 800, 576],
+  ['vex-ventures', 'Vex Ventures', 800, 604],
+  ['stellar-ai-v2', 'Stellar AI v2', 800, 598],
+  ['asme', 'ASME', 800, 582],
+  ['transform-data', 'Transform Data', 800, 592],
+  ['vitara', 'Vitara', 800, 556],
+  ['terra', 'Terra', 800, 582],
+  ['skyelite', 'SkyElite', 800, 606],
+  ['aethera', 'Aethera', 800, 582],
+  ['designpro', 'DesignPro', 800, 570],
+  ['stellar-ai', 'Stellar AI', 800, 708],
+  ['xportfolio', 'XPortfolio', 800, 608],
+  ['orbit-web3', 'Orbit Web3', 800, 604],
+  ['nexora', 'Nexora', 800, 552],
+  ['evr-ventures', 'EVR Ventures', 800, 624],
+  ['planet-orbit', 'Planet Orbit', 800, 612],
+  ['new-era', 'New Era', 800, 568],
+  ['wealth', 'Wealth', 800, 570],
+  ['luminex', 'Luminex', 800, 600],
+  ['celestia', 'Celestia', 800, 586],
+];
+
+export const marqueeItems: MarqueeItem[] = items.map(([slug, label, width, height]) => ({
+  slug,
+  label,
+  // Root-relative so these resolve identically at any nesting depth and on
+  // Vercel, where only `public/` is published.
+  poster: `/marquee/${slug}/poster.webp`,
+  animation: `/marquee/${slug}/preview.webm`,
+  width,
+  height,
+}));
+
+/** Two rows: first 11 previews travel one way, the remaining 10 the other. */
 export const marqueeRows: MarqueeRow[] = [
-  { id: 'row-1', tiles: sources.slice(0, 11) },
-  { id: 'row-2', tiles: sources.slice(11) },
+  { id: 'row-1', tiles: marqueeItems.slice(0, 11) },
+  { id: 'row-2', tiles: marqueeItems.slice(11) },
 ];
 
 /**
- * Performance budget.
- * `MAX_MOUNTED`  — how many animated tiles may be live at once, page-wide.
- * `LOAD_BUDGET`  — how many unique GIF files may ever be fetched, page-wide
- *                  (tiles beyond the budget stay as branded placeholders).
- *
- * Kept deliberately small: every live tile decodes a multi-megabyte animated
- * GIF, so a handful on screen at once is already the difference between a
- * smooth page and a janky one. Both are split evenly across the two rows, so
- * each row gets 3 — enough that the reel always shows real previews on screen,
- * still far below the cost of animating all 21 at once.
+ * How many tiles may play their animation at once. Posters are always
+ * rendered for every tile, so this caps only the expensive decoding work —
+ * it never decides whether a card has an image.
  */
-export const MARQUEE_MAX_MOUNTED = 6;
-export const MARQUEE_LOAD_BUDGET = 6;
-
-/** Readable label rendered on each tile (and used as its placeholder text). */
-export const marqueeLabel = (src: string): string =>
-  src
-    .split('/')
-    .pop()
-    ?.replace('hero-', '')
-    .replace('-preview', '')
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ') ?? 'Preview';
+export const MARQUEE_MAX_ANIMATED = 6;

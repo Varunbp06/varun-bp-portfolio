@@ -135,6 +135,16 @@ footer[id] {
   animation: marquee-shift-left 42s linear infinite;
 }
 
+/* Poster stays mounted underneath; the animation simply fades in over it. */
+@keyframes marquee-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -210,6 +220,12 @@ footer[id] {
   .animate-orbit-slow,
   .text-marquee {
     animation: none !important;
+  }
+
+  /* Posters still render; the fade is simply skipped. */
+  [class*='marquee-fade-in'] {
+    animation: none !important;
+    opacity: 1 !important;
   }
 
   *,

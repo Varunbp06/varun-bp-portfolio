@@ -222,14 +222,39 @@ async function main() {
     const section = document.querySelector('section[aria-label*="preview reel"]');
     if (!section) return null;
     const imgs = [...section.querySelectorAll('img')];
+    const posters = imgs.filter((i) => (i.getAttribute('src') || '').includes('/marquee/') && i.getAttribute('src').endsWith('poster.webp'));
+    const decoded = posters.filter((i) => i.complete && i.naturalWidth > 0);
+    // Only tiles actually on screen are required to be decoded — the offscreen
+    // copies are lazy and load as they approach the viewport.
+    const onScreen = posters.filter((i) => {
+      const r = i.parentElement.getBoundingClientRect();
+      return r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight;
+    });
+    const onScreenDecoded = onScreen.filter((i) => i.complete && i.naturalWidth > 0);
+    const videos = [...section.querySelectorAll('video')];
     const tiles = section.querySelectorAll('div.flex.w-max > div').length;
-    return { mounted: imgs.filter((i) => i.getAttribute('src')).length, tiles };
+    // Any text rendered inside a tile would be a leaked filename fallback.
+    const tileText = [...section.querySelectorAll('[data-slug]')]
+      .map((t) => (t.textContent || '').trim())
+      .filter((t) => t.length);
+    return {
+      mounted: posters.length,
+      decoded: decoded.length,
+      onScreen: onScreen.length,
+      onScreenDecoded: onScreenDecoded.length,
+      videos: videos.length,
+      playing: videos.filter((v) => !v.paused).length,
+      tiles,
+      tileText,
+    };
   })()`);
   check('marquee section exists', Boolean(marquee));
   if (marquee) {
     check('marquee mounts 22+ tiles across both rows', marquee.tiles >= 22, `${marquee.tiles} tiles`);
-    check('marquee media stays inside its budget', marquee.mounted <= 8, `${marquee.mounted} live GIFs`);
-    check('marquee actually renders preview media', marquee.mounted >= 3, `${marquee.mounted} live GIFs`);
+    check('every tile renders a poster', marquee.mounted === marquee.tiles, `${marquee.mounted} posters / ${marquee.tiles} tiles`);
+    check('every visible tile decodes its poster', marquee.onScreen > 0 && marquee.onScreenDecoded === marquee.onScreen, `${marquee.onScreenDecoded}/${marquee.onScreen} visible decoded`);
+    check('animation layer stays within budget', marquee.videos <= 8, `${marquee.videos} videos`);
+    check('no filename text rendered in tiles', marquee.tileText.length === 0, marquee.tileText.slice(0, 2).join('|'));
   }
 
   // ---------------- Command palette ----------------

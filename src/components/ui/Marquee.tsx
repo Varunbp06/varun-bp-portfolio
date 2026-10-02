@@ -6,13 +6,8 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import {
-  MARQUEE_LOAD_BUDGET,
-  MARQUEE_MAX_MOUNTED,
-  marqueeLabel,
-  marqueeRows,
-} from '../../data/marquee';
-import { cn } from '../../lib/utils';
+import MarqueeTile from './MarqueeTile';
+import { MARQUEE_MAX_ANIMATED, marqueeRows, type MarqueeItem } from '../../data/marquee';
 
 const GAP = 12; // gap-3
 
@@ -25,17 +20,19 @@ const TRAVEL_RATIO = 4;
 
 interface RowHandle {
   measure: () => void;
-  apply: (offset: number) => void;
+  apply: (travel: number) => void;
 }
 
 interface RowProps {
-  tiles: string[];
+  id: string;
+  items: MarqueeItem[];
   /** 1 = drifts right with scroll, -1 = drifts left. */
   dir: 1 | -1;
-  budget: number;
-  /** False until the section is near the viewport / media loading allowed. */
-  canLoad: boolean;
-  staticMode: boolean;
+  /** How many tiles in this row may animate at once. */
+  animationSlots: number;
+  /** False until the reel is near the viewport — animation waits, posters do not. */
+  near: boolean;
+  reducedMotion: boolean;
 }
 
 const wrap = (value: number, range: number) => ((value % range) + range) % range;
@@ -43,20 +40,18 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
-  { tiles, dir, budget, canLoad, staticMode },
+  { id, items, dir, animationSlots, near, reducedMotion },
   ref,
 ) {
   const trackRef = useRef<HTMLDivElement>(null);
   const firstTileRef = useRef<HTMLDivElement>(null);
-  const windowRef = useRef<[-1, -1] | [number, number]>([-1, -1]);
   const strideRef = useRef(0);
-  const loadedRef = useRef<Set<number>>(new Set());
-  const [, tick] = useState(0);
+  const visibleRef = useRef<[-1, -1] | [number, number]>([-1, -1]);
+  const liveRef = useRef<[-1, -1] | [number, number]>([-1, -1]);
+  const [live, setLive] = useState<[number, number]>([-1, -1]);
 
-  const [range, setRange] = useState<[number, number]>(() => (staticMode ? [0, 5] : [-1, -1]));
   // Two copies of the set give a seamless wrap without tripling the DOM.
-  const copies = 2;
-  const tiles2 = copies * tiles.length;
+  const tiles2 = 2 * items.length;
 
   useImperativeHandle(
     ref,
@@ -66,43 +61,49 @@ const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
         if (!first) return;
         strideRef.current = first.getBoundingClientRect().width + GAP;
       },
-      /** `travel` is a signed pixel distance already scaled for visibility. */
+      /** `travel` is a pixel distance already scaled for visibility. */
       apply(travel: number) {
         const track = trackRef.current;
         const stride = strideRef.current || 432;
         if (!track) return;
-        const setWidth = stride * tiles.length;
+        const setWidth = stride * items.length;
         // Wrap into one set width so the two copies hand off seamlessly.
         const shifted = -wrap(dir === 1 ? -travel : travel, setWidth);
         track.style.transform = `translate3d(${shifted.toFixed(2)}px,0,0)`;
 
-        if (staticMode) return;
         const viewport = window.innerWidth;
+        // Which tiles are horizontally on screen right now.
         const from = clamp(Math.floor(-shifted / stride) - 1, 0, tiles2 - 1);
         const to = clamp(Math.ceil((-shifted + viewport) / stride) + 1, 0, tiles2 - 1);
-        if (windowRef.current[0] !== from || windowRef.current[1] !== to) {
-          windowRef.current = [from, to];
-          setRange([from, to]);
+        if (visibleRef.current[0] !== from || visibleRef.current[1] !== to) {
+          visibleRef.current = [from, to];
+        }
+
+        // Grant animation to at most `animationSlots` tiles, centred on the
+        // viewport so the budget never lands entirely on one side.
+        let next: [number, number] = [-1, -1];
+        if (!reducedMotion && to >= from) {
+          const mid = (from + to) / 2;
+          let l = Math.round(mid - (animationSlots - 1) / 2);
+          let r = l + animationSlots - 1;
+          if (l < from) {
+            l = from;
+            r = from + animationSlots - 1;
+          }
+          if (r > to) {
+            r = to;
+            l = r - animationSlots + 1;
+          }
+          next = [clamp(l, from, to), clamp(r, from, to)];
+        }
+        if (liveRef.current[0] !== next[0] || liveRef.current[1] !== next[1]) {
+          liveRef.current = next;
+          setLive(next);
         }
       },
     }),
-    [dir, staticMode, tiles.length, tiles2],
+    [dir, items.length, tiles2, animationSlots, reducedMotion],
   );
-
-  // Claim unique sources as they enter the viewport, up to the row budget.
-  useEffect(() => {
-    if (range[0] < 0 || !canLoad) return;
-    let changed = false;
-    for (let i = range[0]; i <= range[1]; i += 1) {
-      const source = i % tiles.length;
-      if (loadedRef.current.has(source)) continue;
-      if (loadedRef.current.size >= budget) break;
-      loadedRef.current.add(source);
-      changed = true;
-    }
-    if (changed) tick((value) => value + 1);
-  }, [range, canLoad, budget, tiles.length]);
-
 
   return (
     <div className="relative w-full overflow-hidden">
@@ -110,42 +111,14 @@ const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
           style prop here so there is exactly one owner of `transform`. */}
       <div ref={trackRef} className="flex w-max gap-3 will-change-transform">
         {Array.from({ length: tiles2 }, (_, index) => {
-          const source = index % tiles.length;
-          const src = tiles[source];
-          // Only tiles inside the visible window and inside the load budget
-          // ever mount an animated <img> — everything else is a branded tile.
-          const inWindow = index >= range[0] && index <= range[1];
-          // Mount the animated file only on the copy that is actually on
-          // screen, so `MARQUEE_MAX_MOUNTED` counts real live animations.
-          const allow = canLoad && inWindow && loadedRef.current.has(source);
+          const item = items[index % items.length];
           return (
-            <div
-              key={`${index}-${src}`}
+            <MarqueeTile
+              key={`${id}-${index}-${item.slug}`}
               ref={index === 0 ? firstTileRef : undefined}
-              className={cn(
-                'relative h-[170px] w-[260px] shrink-0 overflow-hidden rounded-2xl border border-white/10',
-                'bg-gradient-to-br from-white/[0.07] via-white/[0.03] to-transparent',
-                'sm:h-[220px] sm:w-[340px] lg:h-[270px] lg:w-[420px]',
-              )}
-            >
-              <div className="absolute inset-0 flex items-end p-3">
-                <span className="label-xs !tracking-[0.2em] text-white/45">
-                  {marqueeLabel(src)}
-                </span>
-              </div>
-              {allow ? (
-                <img
-                  src={src}
-                  alt=""
-                  aria-hidden="true"
-                  width={420}
-                  height={270}
-                  loading="lazy"
-                  decoding="async"
-                  className="relative h-full w-full object-cover opacity-90"
-                />
-              ) : null}
-            </div>
+              item={item}
+              animate={near && index >= live[0] && index <= live[1]}
+            />
           );
         })}
       </div>
@@ -157,14 +130,15 @@ const MarqueeRow = forwardRef<RowHandle, RowProps>(function MarqueeRow(
  * Two-row preview reel. Rows travel in opposite directions as the page
  * scrolls, driven by one rAF-coalesced passive scroll listener that writes
  * transforms directly to the DOM — no React state per frame, no remounting.
- * Media only loads while the section is near the viewport.
+ *
+ * Every tile renders its poster unconditionally, so the reel always reads as a
+ * continuous gallery of real previews. Only the animation layer is budgeted.
  */
 export default function Marquee() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const rowRefs = useRef<Array<RefObject<RowHandle>>>([]);
   const [near, setNear] = useState(false);
-  const [canLoad, setCanLoad] = useState(true);
-  const [staticMode, setStaticMode] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   // One ref per row, created once.
   if (rowRefs.current.length !== marqueeRows.length) {
@@ -172,25 +146,11 @@ export default function Marquee() {
   }
 
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setStaticMode(reduce.matches);
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(mq.matches);
     update();
-    reduce.addEventListener?.('change', update);
-
-    // Skip multi-megabyte media on data-saver / slow connections.
-    const connection = (
-      navigator as Navigator & {
-        connection?: { saveData?: boolean; effectiveType?: string };
-      }
-    ).connection;
-    if (
-      connection?.saveData ||
-      (connection?.effectiveType && /(^|-)2g$|^3g$/.test(connection.effectiveType))
-    ) {
-      setCanLoad(false);
-    }
-
-    return () => reduce.removeEventListener?.('change', update);
+    mq.addEventListener?.('change', update);
+    return () => mq.removeEventListener?.('change', update);
   }, []);
 
   useEffect(() => {
@@ -201,7 +161,9 @@ export default function Marquee() {
         const entry = entries[0];
         if (entry) setNear(entry.isIntersecting);
       },
-      { rootMargin: '400px 0px', threshold: 0 },
+      // Keep observing well past the viewport so the reel is already warm when
+      // it scrolls into view. Never require 100% visibility.
+      { rootMargin: '600px 0px', threshold: 0 },
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -228,18 +190,12 @@ export default function Marquee() {
 
     const paint = () => {
       frame = 0;
-      if (staticMode) return;
-
       const viewport = window.innerHeight;
-      // How far the reel has travelled through the viewport, 0 → 1.
-      // Normalising against the reel's own scroll span keeps the motion
-      // clearly visible no matter where the section sits in the document,
-      // instead of collapsing to a few pixels of drift.
+      // How far the reel has travelled through the viewport, 0 → 1. Normalising
+      // against the reel's own scroll span keeps the motion clearly visible no
+      // matter where the section sits in the document.
       const span = sectionHeight + viewport;
       const progress = span > 0 ? (window.scrollY - sectionTop + viewport) / span : 0;
-
-      // `TRAVEL_RATIO` × one set width ≈ 4 tiles of travel across the whole
-      // pass — unmistakable on screen while still wrapping seamlessly.
       const travel = progress * TRAVEL_RATIO * sectionHeight;
 
       // `apply()` owns the direction via each row's `dir` prop — pass the
@@ -262,16 +218,10 @@ export default function Marquee() {
       window.clearTimeout(settle);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [near, staticMode]);
+  }, [near]);
 
-  // Split both budgets across the rows so the page-wide caps hold.
-  const perRowBudget = Math.max(
-    1,
-    Math.min(
-      Math.ceil(MARQUEE_LOAD_BUDGET / marqueeRows.length),
-      Math.ceil(MARQUEE_MAX_MOUNTED / marqueeRows.length),
-    ),
-  );
+  // Split the animation budget across rows so the page-wide cap holds.
+  const perRowSlots = Math.max(1, Math.floor(MARQUEE_MAX_ANIMATED / marqueeRows.length));
 
   return (
     <section ref={sectionRef} aria-label="Animated interface preview reel" className="relative py-6">
@@ -283,11 +233,12 @@ export default function Marquee() {
           <MarqueeRow
             key={row.id}
             ref={rowRefs.current[index]}
-            tiles={row.tiles}
+            id={row.id}
+            items={row.tiles}
             dir={index % 2 === 0 ? 1 : -1}
-            budget={perRowBudget}
-            canLoad={canLoad && near}
-            staticMode={staticMode}
+            animationSlots={perRowSlots}
+            near={near}
+            reducedMotion={reducedMotion}
           />
         ))}
       </div>
