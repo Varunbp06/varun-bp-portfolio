@@ -71,8 +71,32 @@ export default function Contact() {
     setStatus(null);
 
     try {
-      // Primary delivery: Web3Forms — the method the earlier site used. It is
-      // used whenever the access key is present on the deployment.
+      // Primary delivery: the same-origin server route, which sends through the
+      // transactional provider with the visitor as Reply-To. It is the only path
+      // the server can actually confirm, so it is tried first. A static host can
+      // answer 200 with the SPA fallback page, so only a real JSON { ok: true }
+      // counts — anything else is treated as a failure.
+      const primary = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          message: form.message,
+          company: form.botcheck,
+        }),
+      }).catch(() => null);
+      const data = (await primary?.json().catch(() => null)) as { ok?: boolean } | null;
+
+      if (primary?.ok && data?.ok === true) {
+        setStatus({ type: 'success', text: 'Message sent — it lands straight in my inbox.' });
+        setForm(emptyForm);
+        return;
+      }
+
+      // Secondary delivery: Web3Forms, kept only as a backstop for the case
+      // where the server route is not configured on a given deployment. It is
+      // a third-party browser call, so it cannot be verified from the server.
       if (WEB3FORMS_KEY) {
         const response = await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
@@ -82,7 +106,7 @@ export default function Contact() {
             name: form.name,
             email: form.email,
             message: form.message,
-            subject: `Portfolio Contact from ${form.name}`,
+            subject: `Portfolio Contact — ${form.name}`,
             from_name: form.name,
             botcheck: form.botcheck,
           }),
@@ -94,27 +118,6 @@ export default function Contact() {
           setForm(emptyForm);
           return;
         }
-      }
-
-      // Backup delivery: the same-origin Vercel function (Resend), if it is
-      // configured on this deployment. A static host can answer 200 with the
-      // SPA fallback page, so only a real JSON { ok: true } counts.
-      const fallback = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          message: form.message,
-          company: form.botcheck,
-        }),
-      }).catch(() => null);
-      const data = (await fallback?.json().catch(() => null)) as { ok?: boolean } | null;
-
-      if (fallback?.ok && data?.ok === true) {
-        setStatus({ type: 'success', text: 'Message sent — it lands straight in my inbox.' });
-        setForm(emptyForm);
-        return;
       }
 
       // Never silently drop a message: hand the visitor a working address.
