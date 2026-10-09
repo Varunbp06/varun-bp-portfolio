@@ -65,4 +65,8 @@ address rather than opening the visitor's mail client.
 Pushing to `main` deploys to the existing Vercel project — the production URL
 above never changes.
 
+## License
+
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Varun B P.
+
 See `AGENTS.md` for the architecture, conventions and performance contracts.
