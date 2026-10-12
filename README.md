@@ -66,3 +66,12 @@ Pushing to `main` deploys to the existing Vercel project — the production URL
 above never changes.
 
 See `AGENTS.md` for the architecture, conventions and performance contracts.
+
+## Author
+
+**Varun B P** — [github.com/Varunbp06](https://github.com/Varunbp06) · [linkedin.com/in/varunbp09](https://linkedin.com/in/varunbp09)
+
+## License
+
+MIT © 2026 Varun B P — see [LICENSE](LICENSE). All content, copy and design in
+this repository are originally authored for this portfolio.
