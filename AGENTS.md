@@ -5,7 +5,7 @@ Keep this file updated when architecture, data or conventions change.
 
 ## Project at a glance
 
-- **Production URL:** <https://varunbp-portfolio.vercel.app/> (Vercel project
+- **Production URL:** <https://varunbp.vercel.app/> (Vercel project
   `varunbp-portfolio`, linked via `.vercel/project.json`). The URL must not
   change — deploys go through this same project.
 - **Stack:** Vite 5 + React 18 + **TypeScript** + Tailwind CSS 3 +
