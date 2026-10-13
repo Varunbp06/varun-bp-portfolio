@@ -5,7 +5,7 @@ Full Stack Developer and AI Developer. Dark editorial design system with a
 magnetic portrait, a scroll-driven preview reel, sticky-stacking project cards
 and honest, source-verified content.
 
-**Live:** <https://varunbp.vercel.app/>
+**Live:** <https://varunbp.vercel.app/> · **Mirror:** <https://varunbp-portfolio.vercel.app/>
 
 ## Stack
 
