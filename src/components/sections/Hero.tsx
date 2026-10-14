@@ -80,7 +80,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-            className="text-gradient-hero whitespace-nowrap text-[clamp(3rem,10vw,9.5rem)] font-extrabold leading-[0.86] tracking-[-0.03em]"
+            className="text-gradient-hero whitespace-nowrap text-[clamp(3rem,10vw,9.5rem)] font-extrabold leading-[0.95] tracking-[-0.03em]"
           >
             {profile.name}
           </motion.h1>
